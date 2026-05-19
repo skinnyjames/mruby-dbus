@@ -1,0 +1,5 @@
+-Wall
+-Wc23-extensions
+-I/usr/include
+-I/usr/include/dbus-1.0
+-Itmp/mruby/include
