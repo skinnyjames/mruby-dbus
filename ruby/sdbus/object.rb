@@ -12,9 +12,16 @@ module SDBus
 
     def interfaces
       @interfaces ||= begin
-        p "introspecting"
         # fetch introspect xml
-        str = service.bus.conn.introspect(service.name, name)
+        str = service.bus.conn.call(
+          service.name,
+          name,
+          "org.freedesktop.DBus.Introspectable",
+          "Introspect",
+          "",
+          []
+        )
+
         xml = XML.parse str
         parse_interfaces(xml)
       end

@@ -553,8 +553,6 @@ mrb_value mrb_sdbus_conn_call(mrb_state* mrb, mrb_value self)
     }
   }
 
-  
-
   rc = sd_bus_call(wrapper->conn, message, 0, &err, &reply);
   sd_bus_message_unref(message);
 
@@ -569,7 +567,11 @@ mrb_value mrb_sdbus_conn_call(mrb_state* mrb, mrb_value self)
     mrb_raise(mrb, errklass, err_buf);
   }
 
-  if (reply == NULL) return mrb_nil_value();
+  if (sd_bus_message_is_empty(reply) > 0)
+  {
+    return mrb_nil_value();
+  }
+
   mrb_value reply_value = mrb_sdbus_deserialize_message(mrb, reply, NULL);
   sd_bus_message_unref(reply);
   return reply_value;

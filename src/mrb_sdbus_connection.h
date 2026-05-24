@@ -1,7 +1,7 @@
 #ifndef MRUBY_DBUS_CONNECTION_H
 #define MRUBY_DBUS_CONNECTION_H
 
-#include <basu/sd-bus.h>
+#include <systemd/sd-bus.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <malloc.h>

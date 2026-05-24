@@ -4,7 +4,7 @@ MRuby::Build.new do |conf|
   conf.gem __dir__
   conf.gembox "stdlib"
   conf.gembox "stdlib-io"
-  conf.linker.flags_after_libraries += ['-static', '-lbasu']
+  conf.linker.flags += ['-lsystemd']
   # Generate mrbc command
   conf.gem :core => "mruby-bin-mirb"
   conf.gem :core => "mruby-bin-mruby"
