@@ -124,7 +124,15 @@ const char* mrb_sdbus_serialize_message(mrb_state* mrb, sd_bus_message* message,
       int cval = (int)mrb_test(args);
       sd_bus_message_append_basic(message, type, &cval);
       break;
-    }    
+    }
+    case SD_BUS_TYPE_BYTE:
+    {
+      int icval = (int)mrb_integer(args);
+      if (icval < 0) mrb_raise(mrb, errklass, "Argument can't be a negative integer");
+      uint8_t cval = (uint8_t)icval;
+      sd_bus_message_append_basic(message, type, &cval);
+      break;
+    }
     case SD_BUS_TYPE_UINT16:
     {
       int icval = (int)mrb_integer(args);
@@ -193,7 +201,7 @@ const char* mrb_sdbus_serialize_message(mrb_state* mrb, sd_bus_message* message,
     case SD_BUS_TYPE_ARRAY:
     {
       // need the contents of the array sig
-      char contents[64];
+      char contents[256];
       const char* tmp = next;
 
       if (next[0] == SD_BUS_TYPE_DICT_ENTRY_BEGIN)
@@ -238,7 +246,7 @@ const char* mrb_sdbus_serialize_message(mrb_state* mrb, sd_bus_message* message,
 
       if (itype == SD_BUS_TYPE_DICT_ENTRY_BEGIN)
       {
-        char icontents[64];
+        char icontents[256];
         strncpy(icontents, contents + 1, strlen(contents) - 2);
         icontents[strlen(contents) - 2] = '\0';
     
@@ -288,7 +296,7 @@ const char* mrb_sdbus_serialize_message(mrb_state* mrb, sd_bus_message* message,
     }
     case SD_BUS_TYPE_STRUCT_BEGIN:
     {
-      char contents[64];
+      char contents[256];
       const char* tmp = next;
       int depth = 1;
       int i = 0;
@@ -364,12 +372,19 @@ mrb_value mrb_sdbus_deserialize_message(mrb_state* mrb, sd_bus_message* message,
         sd_bus_message_read_basic(message, type, &cval);
         value = cval == false ? mrb_false_value() : mrb_true_value();
         break;
-      }    
+      }
+      case SD_BUS_TYPE_BYTE:
+      {
+        uint8_t cval = 0;
+        sd_bus_message_read_basic(message, type, &cval);
+        value = mrb_fixnum_value((mrb_int) cval);
+        break;
+      }
       case SD_BUS_TYPE_UINT16:
       case SD_BUS_TYPE_UINT32:
       case SD_BUS_TYPE_UINT64:
       {
-        uint64_t cval;
+        uint64_t cval = 0;
         sd_bus_message_read_basic(message, type, &cval);
         value = mrb_fixnum_value((mrb_int) cval);
         break;
@@ -379,14 +394,14 @@ mrb_value mrb_sdbus_deserialize_message(mrb_state* mrb, sd_bus_message* message,
       case SD_BUS_TYPE_INT64:
       case SD_BUS_TYPE_UNIX_FD:          
       {
-        int64_t cval;
+        int64_t cval = 0;
         sd_bus_message_read_basic(message, type, &cval);
         value = mrb_fixnum_value((mrb_int) cval);
         break;
       } 
       case SD_BUS_TYPE_DOUBLE:
       {
-        double cval;
+        double cval = 0.0;
         sd_bus_message_read_basic(message, type, &cval);
         value = mrb_float_value(mrb, (mrb_float)cval);
         break;
@@ -467,6 +482,7 @@ mrb_value mrb_sdbus_deserialize_message(mrb_state* mrb, sd_bus_message* message,
       }
       default:
       {
+        printf("%c -> %s\n", type, contents);
         mrb_raise(mrb, errklass, "Can't deserialize message");
       }
     }
@@ -553,6 +569,8 @@ mrb_value mrb_sdbus_conn_call(mrb_state* mrb, mrb_value self)
     }
   }
 
+  
+
   rc = sd_bus_call(wrapper->conn, message, 0, &err, &reply);
   sd_bus_message_unref(message);
 
@@ -571,7 +589,6 @@ mrb_value mrb_sdbus_conn_call(mrb_state* mrb, mrb_value self)
   {
     return mrb_nil_value();
   }
-
   mrb_value reply_value = mrb_sdbus_deserialize_message(mrb, reply, NULL);
   sd_bus_message_unref(reply);
   return reply_value;
